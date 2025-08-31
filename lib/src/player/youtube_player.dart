@@ -402,11 +402,11 @@ class _YoutubePlayerState extends State<YoutubePlayer> {
           if (!controller.flags.hideControls)
              Center(child: PlayPauseButton()),
           if (controller.value.hasError) errorWidget,
-          if(controller.value.captionsAvailable)
-          CaptionControls(
-            iconColor: Colors.white,
-            iconSize: 22.0,
-          ),
+          // if(controller.value.captionsAvailable)
+          // CaptionControls(
+          //   iconColor: Colors.white,
+          //   iconSize: 22.0,
+          // ),
         ],
       ),
     );
