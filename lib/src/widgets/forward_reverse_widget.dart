@@ -113,21 +113,39 @@ class _ForwardRewindControlsState extends State<ForwardRewindControls> with Tick
   }
 
   void _rewind() {
+    final wasPlaying = _controller.value.isPlaying; // save current state
     final currentPosition = _controller.value.position;
     final newPosition = currentPosition - widget.rewindDuration;
     final targetPosition = newPosition.isNegative ? Duration.zero : newPosition;
 
     _controller.seekTo(targetPosition);
+
+    // Restore state after seek
+    if (wasPlaying) {
+      _controller.play();
+    } else {
+      _controller.pause();
+    }
+
     _showRewindButtonAnimation();
   }
 
   void _forward() {
+    final wasPlaying = _controller.value.isPlaying; // save current state
     final currentPosition = _controller.value.position;
     final newPosition = currentPosition + widget.forwardDuration;
     final maxDuration = _controller.metadata.duration;
     final targetPosition = newPosition > maxDuration ? maxDuration : newPosition;
 
     _controller.seekTo(targetPosition);
+
+    // Restore state after seek
+    if (wasPlaying) {
+      _controller.play();
+    } else {
+      _controller.pause();
+    }
+
     _showForwardButtonAnimation();
   }
 

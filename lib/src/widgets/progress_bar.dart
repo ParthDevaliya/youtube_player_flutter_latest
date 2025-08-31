@@ -7,41 +7,6 @@
 // import '../utils/youtube_player_controller.dart';
 
 // /// Defines different colors for [ProgressBar].
-// class ProgressBarColors {
-//   /// Defines background color of the [ProgressBar].
-//   final Color? backgroundColor;
-
-//   /// Defines color for played portion of the [ProgressBar].
-//   final Color? playedColor;
-
-//   /// Defines color for buffered portion of the [ProgressBar].
-//   final Color? bufferedColor;
-
-//   /// Defines color for handle of the [ProgressBar].
-//   final Color? handleColor;
-
-//   /// Creates [ProgressBarColors].
-//   const ProgressBarColors({
-//     this.backgroundColor,
-//     this.playedColor,
-//     this.bufferedColor,
-//     this.handleColor,
-//   });
-
-//   ///
-//   ProgressBarColors copyWith({
-//     Color? backgroundColor,
-//     Color? playedColor,
-//     Color? bufferedColor,
-//     Color? handleColor,
-//   }) =>
-//       ProgressBarColors(
-//         backgroundColor: backgroundColor ?? this.backgroundColor,
-//         handleColor: handleColor ?? this.handleColor,
-//         bufferedColor: bufferedColor ?? this.bufferedColor,
-//         playedColor: playedColor ?? this.playedColor,
-//       );
-// }
 
 // /// A widget to display video progress bar.
 // class ProgressBar extends StatefulWidget {
@@ -268,6 +233,43 @@
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
+class ProgressBarColors {
+  /// Defines background color of the [ProgressBar].
+  final Color? backgroundColor;
+
+  /// Defines color for played portion of the [ProgressBar].
+  final Color? playedColor;
+
+  /// Defines color for buffered portion of the [ProgressBar].
+  final Color? bufferedColor;
+
+  /// Defines color for handle of the [ProgressBar].
+  final Color? handleColor;
+
+  /// Creates [ProgressBarColors].
+  const ProgressBarColors({
+    this.backgroundColor,
+    this.playedColor,
+    this.bufferedColor,
+    this.handleColor,
+  });
+
+  ///
+  ProgressBarColors copyWith({
+    Color? backgroundColor,
+    Color? playedColor,
+    Color? bufferedColor,
+    Color? handleColor,
+  }) =>
+      ProgressBarColors(
+        backgroundColor: backgroundColor ?? this.backgroundColor,
+        handleColor: handleColor ?? this.handleColor,
+        bufferedColor: bufferedColor ?? this.bufferedColor,
+        playedColor: playedColor ?? this.playedColor,
+      );
+}
+
+
 class ProgressBar extends StatefulWidget {
   final YoutubePlayerController? controller;
   final ProgressBarColors colors;
@@ -425,7 +427,7 @@ class _ProgressBarPainter extends CustomPainter {
   final double handleRadius;
   final double playedValue;
   final double bufferedValue;
-  final ProgressBarColors colors;
+  final ProgressBarColors? colors;
   final bool touchDown;
   final ThemeData themeData;
 
@@ -434,51 +436,63 @@ class _ProgressBarPainter extends CustomPainter {
     required this.handleRadius,
     required this.playedValue,
     required this.bufferedValue,
-    required this.colors,
+    this.colors,
     required this.touchDown,
     required this.themeData,
   });
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final basePaint = Paint()
-      ..color = colors.backgroundColor ?? themeData.dividerColor
-      ..strokeWidth = progressWidth
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final playedPaint = Paint()
-      ..color = colors.playedColor ?? themeData.colorScheme.primary
-      ..strokeWidth = progressWidth
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final bufferedPaint = Paint()
-      ..color = colors.bufferedColor ?? themeData.disabledColor
-      ..strokeWidth = progressWidth
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final handlePaint = Paint()
-      ..color = colors.handleColor ?? themeData.colorScheme.primary
-      ..style = PaintingStyle.fill;
-
-    final baseLine = Offset(0, size.height / 2);
-    final endLine = Offset(size.width, size.height / 2);
-
-    canvas.drawLine(baseLine, endLine, basePaint);
-
-    final playedEnd = Offset(size.width * playedValue, size.height / 2);
-    final bufferedEnd = Offset(size.width * bufferedValue, size.height / 2);
-
-    canvas.drawLine(baseLine, bufferedEnd, bufferedPaint);
-    canvas.drawLine(baseLine, playedEnd, playedPaint);
-
-    if (touchDown) {
-      canvas.drawCircle(playedEnd, handleRadius, handlePaint);
-    }
+  bool shouldRepaint(_ProgressBarPainter old) {
+    return playedValue != old.playedValue ||
+        bufferedValue != old.bufferedValue ||
+        touchDown != old.touchDown;
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..isAntiAlias = true
+      ..strokeCap = StrokeCap.square
+      ..strokeWidth = progressWidth;
+
+    final centerY = size.height / 2.0;
+    final barLength = size.width - handleRadius * 2.0;
+
+    final startPoint = Offset(handleRadius, centerY);
+    final endPoint = Offset(size.width - handleRadius, centerY);
+    final progressPoint = Offset(
+      barLength * playedValue + handleRadius,
+      centerY,
+    );
+    final secondProgressPoint = Offset(
+      barLength * bufferedValue + handleRadius,
+      centerY,
+    );
+
+    final color = themeData.colorScheme.primaryContainer;
+
+    paint.color = colors?.backgroundColor ?? color.withValues(alpha: 0.38);
+    canvas.drawLine(startPoint, endPoint, paint);
+
+    paint.color = colors?.bufferedColor ?? Colors.white70;
+    canvas.drawLine(startPoint, secondProgressPoint, paint);
+
+    paint.color = colors?.playedColor ?? color;
+    canvas.drawLine(startPoint, progressPoint, paint);
+
+    final handlePaint = Paint()..isAntiAlias = true;
+
+    handlePaint.color = Colors.transparent;
+    canvas.drawCircle(progressPoint, centerY, handlePaint);
+
+    final handleColor = colors?.handleColor ?? color;
+
+    if (touchDown) {
+      handlePaint.color = handleColor.withValues(alpha: 0.4);
+      canvas.drawCircle(progressPoint, handleRadius * 3, handlePaint);
+    }
+
+    handlePaint.color = handleColor;
+    canvas.drawCircle(progressPoint, handleRadius, handlePaint);
+  }
 }
